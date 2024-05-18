@@ -1,9 +1,18 @@
 import json
 from difflib import get_close_matches
 from collections import defaultdict
+import pyttsx3
 import tkinter as tk
 from tkinter import scrolledtext
 
+# Initialize the text-to-speech engine
+engine = pyttsx3.init()
+
+def speak(text):
+    """Convert text to speech."""
+    engine.say(text)
+    engine.runAndWait()
+    
 def load_knowledge_base(file_path: str) -> dict:
     """Load the knowledge base from a JSON file."""
     try:
@@ -45,14 +54,14 @@ def send_message(event=None):
     if best_match:
         answer = knowledge_base[best_match]
         chat_log.insert(tk.END, f'Miab: {answer}\n')
+        speak(answer)
     else:
         chat_log.insert(tk.END, 'Miab: Sorry, I do not have a response to your question.\n')
-        new_answer = user_entry.get()
+        new_answer = input('You can type an answer to teach me or "skip" to skip: ').strip()
         if new_answer.lower() != 'skip':
-            new_answer = input('You can type an answer to teach me or "skip" to skip: ').strip()
-            if new_answer.lower() != 'skip':
-                response = teach_bot(knowledge_base, user_input, new_answer)
-                chat_log.insert(tk.END, f'Miab: {response}\n')
+            response = teach_bot(knowledge_base, user_input, new_answer)
+            chat_log.insert(tk.END, f'Miab: {response}\n')
+            speak(response)
 
 # Load knowledge base
 knowledge_base = load_knowledge_base("knowledge_base.json")
