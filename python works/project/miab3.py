@@ -1,6 +1,8 @@
 import json
 from difflib import get_close_matches
 from collections import defaultdict
+import tkinter as tk
+from tkinter import scrolledtext
 
 def load_knowledge_base(file_path: str) -> dict:
     """Load the knowledge base from a JSON file."""
@@ -28,31 +30,49 @@ def teach_bot(knowledge_base: dict, user_input: str, new_answer: str):
     """Teach the bot a new answer."""
     knowledge_base[user_input] = new_answer
     save_knowledge_base("knowledge_base.json", knowledge_base)
-    print('Miab: Thank you for your answer. I will remember it for next time.')
+    return 'Thank you for your answer. I will remember it for next time.'
 
-def chat_bot():
-    """Main function to run the chatbot."""
-    knowledge_base = load_knowledge_base("knowledge_base.json")
-    name = input("Hello, please insert your name and press enter to continue: ")
-    print(f"Hello {name}, how can I help you today? (type 'exit' to end the conversation)")
-
-    while True:
-        user_input = input('You: ')
-        if user_input.lower() == 'exit':
-            print("Miab: See yaah!")
-            break
-        
-        best_match = find_best_match(user_input, list(knowledge_base.keys()))
-        if best_match:
-            answer = knowledge_base[best_match]
-            print(f'Miab: {answer}')
-        else:
-            print('Miab: Sorry, I do not have a response to your question.')
+def send_message(event=None):
+    user_input = user_entry.get()
+    chat_log.insert(tk.END, f'You: {user_input}\n')
+    user_entry.delete(0, tk.END)
+    
+    if user_input.lower() == 'exit':
+        root.quit()
+        return
+    
+    best_match = find_best_match(user_input, list(knowledge_base.keys()))
+    if best_match:
+        answer = knowledge_base[best_match]
+        chat_log.insert(tk.END, f'Miab: {answer}\n')
+    else:
+        chat_log.insert(tk.END, 'Miab: Sorry, I do not have a response to your question.\n')
+        new_answer = user_entry.get()
+        if new_answer.lower() != 'skip':
             new_answer = input('You can type an answer to teach me or "skip" to skip: ').strip()
-            if new_answer.lower() == 'skip':
-                continue
-            else:
-                teach_bot(knowledge_base, user_input, new_answer)
+            if new_answer.lower() != 'skip':
+                response = teach_bot(knowledge_base, user_input, new_answer)
+                chat_log.insert(tk.END, f'Miab: {response}\n')
 
-if __name__ == "__main__":
-    chat_bot()
+# Load knowledge base
+knowledge_base = load_knowledge_base("knowledge_base.json")
+
+# Create GUI
+root = tk.Tk()
+root.title("Chatbot")
+
+chat_frame = tk.Frame(root)
+chat_frame.pack(padx=10, pady=10)
+
+chat_log = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, width=60, height=20)
+chat_log.pack(padx=10, pady=10)
+
+user_entry = tk.Entry(chat_frame, width=60)
+user_entry.pack(padx=10, pady=10)
+user_entry.bind("<Return>", send_message)
+
+send_button = tk.Button(chat_frame, text="Send", command=send_message)
+send_button.pack(pady=10)
+
+# Run the GUI event loop
+root.mainloop()
