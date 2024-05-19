@@ -56,7 +56,7 @@ def teach_bot(knowledge_base: dict, user_input: str, new_answer: str):
     save_knowledge_base("knowledge_base.json", knowledge_base)
     return 'Thank you for your answer. I will remember it for next time.'
 
-def send_message(event=None):
+def send_message():
     user_input = user_entry.get()
     chat_log.insert(tk.END, f'You: {user_input}\n')
     user_entry.delete(0, tk.END)
@@ -64,6 +64,10 @@ def send_message(event=None):
     if user_input.lower() == 'exit':
         root.quit()
         return
+    elif user_input.lower() == 'clear':
+        chat_log.delete(1.0, tk.END)
+        return
+    
     
     best_match = find_best_match(user_input, list(knowledge_base.keys()))
     if best_match:
@@ -76,29 +80,40 @@ def send_message(event=None):
         speak(instant_answer)
         teach_bot(knowledge_base, user_input, instant_answer)
 
-# Load knowledge base
-knowledge_base = load_knowledge_base("knowledge_base.json")
+def main():
+    global user_entry, chat_log, root, knowledge_base
 
-# Create GUI
-root = tk.Tk()
-root.title("Chatbot-Miab")
+    # Load knowledge base
+    knowledge_base = load_knowledge_base("knowledge_base.json")
 
-root.configure(bg='lightblue')  # Set background color of the window
-label = tk.Label(root, text='Mike\'s chatbot', font=('Arial', 16), bg='lightblue')
-label.pack()
-chat_frame = tk.Frame(root, bg='lightblue')  # Set background color of the frame
-chat_frame.pack(padx=10, pady=10)
+    # Create GUI
+    root = tk.Tk()
+    root.title("Chatbot-Miab")
+    root.geometry("700x500")
 
-chat_log = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, width=60, height=20, bg='white', fg='black', font=('Arial', 10))
-chat_log.pack(padx=10, pady=10)
+    root.configure(bg='lightblue')  # Set background color of the window
 
-user_entry = tk.Entry(chat_frame, width=60, bg='white', fg='black', font=('Arial', 10))
-user_entry.pack(padx=10, pady=10)
-user_entry.bind("<Return>", send_message)
-label = tk.Label(root, text='Insert your question in the text box above', font=('Serif', 9), bg='lightblue' )
-label.pack(padx=10, pady=10)
-send_button = tk.Button(chat_frame, text="Send", command=send_message, bg='White', fg='black', border='2px', font=('Arial', 10))
-send_button.pack(pady=10)
+    title_label = tk.Label(root, text="Mike's Chatbot", font=('Arial', 20, 'bold'), bg='lightblue')
+    title_label.pack(pady=10)
 
-# Run the GUI event loop
-root.mainloop()
+    chat_frame = tk.Frame(root, bg='lightblue')  # Set background color of the frame
+    chat_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+    chat_log = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, width=60, height=20, bg='white', fg='black', font=('Arial', 10))
+    chat_log.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+    user_entry = tk.Entry(chat_frame, width=60, bg='white', fg='black', font=('Arial', 12))
+    user_entry.pack(padx=10, pady=10, fill=tk.X)
+    user_entry.bind("<Return>", lambda event: send_message())
+
+    send_button = tk.Button(chat_frame, text="Send", command=send_message, bg='white', fg='black', border='2px', font=('Arial', 12))
+    send_button.pack(pady=10)
+
+    instruction_label = tk.Label(root, text='Insert your question in the text box above', font=('Arial', 12), bg='lightblue')
+    instruction_label.pack(pady=10)
+
+    # Run the GUI event loop
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
