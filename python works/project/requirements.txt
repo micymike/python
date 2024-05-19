@@ -1,0 +1,11 @@
+I installed tkinter using pip so as to create the graphical user interface
+import tkinter as tk    
+
+installed pyttsx3 to create the voice effect
+import pyttsx3
+import json
+from difflib import get_close_matches
+from collections import defaultdict
+import pyttsx3
+import tkinter as tk
+from tkinter import scrolledtext

@@ -2,18 +2,12 @@ import json
 from difflib import get_close_matches
 from collections import defaultdict
 import pyttsx3
+import requests
 import tkinter as tk
 from tkinter import scrolledtext
 
 # Initialize the text-to-speech engine
 engine = pyttsx3.init()
-
-# Set up the female voice
-voices = engine.getProperty('voices')
-for voice in voices:
-    if 'female' in voice.name.lower():
-        engine.setProperty('voice', voice.id)
-        break
 
 def speak(text):
     """Convert text to speech."""
@@ -35,12 +29,26 @@ def save_knowledge_base(file_path: str, knowledge_base: dict):
 
 def find_best_match(user_question: str, questions: list) -> str:
     """Find the best match for the user's question from the knowledge base."""
-    matches = get_close_matches(user_question, questions, n=1, cutoff=0.5)
+    matches = get_close_matches(user_question, questions, n=1, cutoff=0.6)
     return matches[0] if matches else None
 
 def get_answer(knowledge_base: dict, question: str) -> str:
     """Get the answer from the knowledge base."""
     return knowledge_base.get(question, "Sorry, I don't have a response to that.")
+
+def get_duckduckgo_instant_answer(query: str) -> str:
+    """Fetch instant answer from DuckDuckGo API."""
+    url = f"https://api.duckduckgo.com/?q={query}&format=json&pretty=1"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        answer = data.get("AbstractText", "")
+        if not answer:
+            answer = "Sorry, I couldn't find an instant answer for that."
+        return answer
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 def teach_bot(knowledge_base: dict, user_input: str, new_answer: str):
     """Teach the bot a new answer."""
@@ -63,34 +71,33 @@ def send_message(event=None):
         chat_log.insert(tk.END, f'Miab: {answer}\n')
         speak(answer)
     else:
-        chat_log.insert(tk.END, 'Miab: Sorry, I do not have a response to your question.\n')
-        new_answer = input('You can type an answer to teach me or "skip" to skip: ').strip()
-        if new_answer.lower() != 'skip':
-            response = teach_bot(knowledge_base, user_input, new_answer)
-            chat_log.insert(tk.END, f'Miab: {response}\n')
-            speak(response)
+        instant_answer = get_duckduckgo_instant_answer(user_input)
+        chat_log.insert(tk.END, f'Miab (DuckDuckGo): {instant_answer}\n')
+        speak(instant_answer)
+        teach_bot(knowledge_base, user_input, instant_answer)
 
 # Load knowledge base
 knowledge_base = load_knowledge_base("knowledge_base.json")
 
 # Create GUI
 root = tk.Tk()
-root.title("Miab")
-label = tk.Label(root, text='Insert your answer in the text box below', font=('Serif', 18), bg='lightblue')
-label.pack(padx=10, pady=10)
-root.configure(bg='lightblue')  # Set background color of the window
+root.title("Chatbot-Miab")
 
+root.configure(bg='lightblue')  # Set background color of the window
+label = tk.Label(root, text='Mike\'s chatbot', font=('Arial', 16), bg='lightblue')
+label.pack()
 chat_frame = tk.Frame(root, bg='lightblue')  # Set background color of the frame
 chat_frame.pack(padx=10, pady=10)
 
-chat_log = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, width=60, height=20, bg='white', fg='black')
+chat_log = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, width=60, height=20, bg='white', fg='black', font=('Arial', 10))
 chat_log.pack(padx=10, pady=10)
 
-user_entry = tk.Entry(chat_frame, width=60, bg='white', fg='black')
+user_entry = tk.Entry(chat_frame, width=60, bg='white', fg='black', font=('Arial', 10))
 user_entry.pack(padx=10, pady=10)
 user_entry.bind("<Return>", send_message)
-
-send_button = tk.Button(chat_frame, text="Send", command=send_message, bg='lightblue', fg='black')
+label = tk.Label(root, text='Insert your question in the text box above', font=('Serif', 9), bg='lightblue' )
+label.pack(padx=10, pady=10)
+send_button = tk.Button(chat_frame, text="Send", command=send_message, bg='White', fg='black', border='2px', font=('Arial', 10))
 send_button.pack(pady=10)
 
 # Run the GUI event loop
